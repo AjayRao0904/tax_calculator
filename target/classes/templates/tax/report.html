@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Tax Report - Accounting Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .text-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" th:href="@{/dashboard}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" th:href="@{/companies}">
+                                <i class="fas fa-building me-2"></i>
+                                Companies
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" th:href="@{/expenses}">
+                                <i class="fas fa-money-bill me-2"></i>
+                                Expenses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active text-white" th:href="@{/tax/calculator}">
+                                <i class="fas fa-calculator me-2"></i>
+                                Tax Calculator
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Tax Report</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button type="button" class="btn btn-primary" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i> Print Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Alert -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Error!</strong> <span th:text="${message}">Something went wrong.</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Report Content -->
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title" th:text="${company?.name}">Company Name</h3>
+                        <p class="text-muted">
+                            Tax Report for period:
+                            <span th:text="${#temporals.format(startDate, 'dd-MM-yyyy')}">01-01-2024</span>
+                            to
+                            <span th:text="${#temporals.format(endDate, 'dd-MM-yyyy')}">31-12-2024</span>
+                        </p>
+
+                        <div class="table-responsive mt-4">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th style="width: 40%">Total Revenue</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(totalRevenue ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total Expenses</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(totalExpenses ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Asset Costs</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(assetCosts ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Depreciation Rate</th>
+                                        <td class="text-right" th:text="${(depreciationRate ?: 0) + '%'}">0%</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Depreciation Amount</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(depreciation ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr class="table-info">
+                                        <th>Taxable Income</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(taxableIncome ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Tax Rate</th>
+                                        <td class="text-right" th:text="${(taxRate ?: 0) + '%'}">0%</td>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <th>Gross Tax Amount</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(grossTaxAmount ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>TDS Credits</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(tdsCredits ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Advance Tax Paid</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(advanceTax ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                    <tr class="table-danger">
+                                        <th>Net Tax Payable</th>
+                                        <td class="text-right" th:text="${'₹' + #numbers.formatDecimal(netTaxPayable ?: 0, 1, 2)}">₹0.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Notes:</h4>
+                            <ul>
+                                <li>This is a preliminary tax calculation and may not include all adjustments.</li>
+                                <li>Depreciation is calculated at <span th:text="${depreciationRate ?: 0}">0</span>% of asset costs.</li>
+                                <li>Net tax payable is calculated after deducting TDS credits and advance tax payments.</li>
+                                <li>Please consult with a tax professional for final tax assessment.</li>
+                                <li>Tax rates and calculations are based on current fiscal year rules.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

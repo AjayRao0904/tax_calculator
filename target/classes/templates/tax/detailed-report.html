@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Tax Report</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .tax-section { margin-bottom: 2rem; }
+        .tax-table { margin-top: 1rem; }
+        .total-row { font-weight: bold; background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Tax Report for <span th:text="${company.name}"></span></h2>
+        <p>Period: <span th:text="${#temporals.format(startDate, 'dd-MM-yyyy')}"></span> to 
+                  <span th:text="${#temporals.format(endDate, 'dd-MM-yyyy')}"></span></p>
+
+        <!-- Disallowed Expenses Section -->
+        <div class="tax-section">
+            <h4>Disallowed Expenses</h4>
+            <table class="table table-bordered tax-table">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Category</th>
+                        <th class="text-right">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${disallowedExpenses}">
+                        <td th:text="${entry.key}"></td>
+                        <td class="text-right" th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Total Disallowed Expenses</td>
+                        <td class="text-right" th:text="${#numbers.formatDecimal(disallowedExpenses.values().stream().reduce(0, (a, b) -> a + b), 1, 2)}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Exempt Income Section -->
+        <div class="tax-section">
+            <h4>Exempt Income</h4>
+            <div class="alert alert-info">
+                Total Exempt Income: ₹<span th:text="${#numbers.formatDecimal(exemptIncome, 1, 2)}"></span>
+            </div>
+        </div>
+
+        <!-- Depreciation Section -->
+        <div class="tax-section">
+            <h4>Depreciation Adjustment</h4>
+            <div class="alert alert-info">
+                Total Depreciation: ₹<span th:text="${#numbers.formatDecimal(depreciationAdjustment, 1, 2)}"></span>
+            </div>
+        </div>
+
+        <!-- Brought Forward Losses Section -->
+        <div class="tax-section">
+            <h4>Brought Forward Losses</h4>
+            <table class="table table-bordered tax-table">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Year</th>
+                        <th class="text-right">Amount (₹)</th>
+                        <th class="text-right">Utilized Amount (₹)</th>
+                        <th class="text-right">Remaining Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="loss : ${broughtForwardLosses}">
+                        <td th:text="${loss.year}"></td>
+                        <td class="text-right" th:text="${#numbers.formatDecimal(loss.amount, 1, 2)}"></td>
+                        <td class="text-right" th:text="${#numbers.formatDecimal(loss.utilizedAmount, 1, 2)}"></td>
+                        <td class="text-right" th:text="${#numbers.formatDecimal(loss.unutilizedAmount, 1, 2)}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tax Credits Section -->
+        <div class="tax-section">
+            <h4>Tax Credits and Payments</h4>
+            <table class="table table-bordered tax-table">
+                <tbody>
+                    <tr>
+                        <td>TDS Credits</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(tdsCredits, 1, 2)}"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Advance Tax Paid</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(advanceTaxPaid, 1, 2)}"></span></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Total Tax Credits</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(tdsCredits + advanceTaxPaid, 1, 2)}"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Final Tax Summary -->
+        <div class="tax-section">
+            <h4>Tax Summary</h4>
+            <table class="table table-bordered tax-table">
+                <tbody>
+                    <tr>
+                        <td>Total Taxable Income</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(taxableIncome, 1, 2)}"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Tax Rate</td>
+                        <td class="text-right"><span th:text="${company.companyProfile.newManufacturingCompany ? '15%' : '25%'}"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Tax Liability</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(taxLiability, 1, 2)}"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Less: Tax Credits</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(tdsCredits + advanceTaxPaid, 1, 2)}"></span></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Net Tax Payable</td>
+                        <td class="text-right">₹<span th:text="${#numbers.formatDecimal(netTaxPayable, 1, 2)}"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

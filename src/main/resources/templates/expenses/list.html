@@ -2,9 +2,25 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Expenses - Accounting Platform</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .tax-info {
+            cursor: help;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -14,32 +30,26 @@
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="/dashboard">
-                                <i class="bi bi-speedometer2 me-2"></i>
+                            <a class="nav-link text-white" th:href="@{/dashboard}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
                                 Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="/companies">
-                                <i class="bi bi-building me-2"></i>
+                            <a class="nav-link text-white" th:href="@{/companies}">
+                                <i class="fas fa-building me-2"></i>
                                 Companies
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active text-white" href="/expenses">
-                                <i class="bi bi-cash-stack me-2"></i>
+                            <a class="nav-link active text-white" th:href="@{/expenses}">
+                                <i class="fas fa-money-bill me-2"></i>
                                 Expenses
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="/revenues">
-                                <i class="bi bi-graph-up me-2"></i>
-                                Revenues
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="/tax-calculator">
-                                <i class="bi bi-calculator me-2"></i>
+                            <a class="nav-link text-white" th:href="@{/tax}">
+                                <i class="fas fa-calculator me-2"></i>
                                 Tax Calculator
                             </a>
                         </li>
@@ -52,45 +62,95 @@
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2">Expenses</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
-                            <i class="bi bi-plus-circle"></i> Add Expense
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                            <i class="fas fa-plus-circle"></i> Add Expense
                         </button>
                     </div>
+                </div>
+
+                <!-- Error Alert -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Error!</strong> <span th:text="${message}">Something went wrong.</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Success Alert -->
+                <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <strong>Success!</strong> Expense has been saved successfully.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
                 <!-- Expense Table -->
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Date</th>
-                                <th>Company</th>
                                 <th>Category</th>
                                 <th>Description</th>
-                                <th>Amount</th>
+                                <th>Payment Mode</th>
+                                <th class="text-right">Amount (₹)</th>
+                                <th>Tax Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="expense : ${expenses}">
-                                <td th:text="${#temporals.format(expense.date, 'dd-MM-yyyy')}">01-01-2024</td>
-                                <td th:text="${expense.company.name}">Company Name</td>
-                                <td th:text="${expense.category}">Category</td>
-                                <td th:text="${expense.description}">Description</td>
-                                <td th:text="${#numbers.formatDecimal(expense.amount, 1, 2)}">0.00</td>
+                                <td th:text="${#temporals.format(expense.date, 'dd-MM-yyyy')}"></td>
+                                <td th:text="${expense.category.displayName}"></td>
+                                <td th:text="${expense.description}"></td>
+                                <td>
+                                    <span th:text="${expense.paymentMode}"></span>
+                                    <small class="text-muted d-block" th:if="${expense.paymentReference != 'N/A'}" th:text="${expense.paymentReference}"></small>
+                                </td>
+                                <td class="text-right" th:text="${#numbers.formatDecimal(expense.amount, 1, 2)}"></td>
+                                <td>
+                                    <span th:if="${expense.taxDeductible}" class="badge badge-success">
+                                        <i class="fas fa-check-circle"></i> Tax Deductible
+                                    </span>
+                                    <span th:unless="${expense.taxDeductible}" class="badge badge-danger">
+                                        <i class="fas fa-times-circle"></i> Non-Deductible
+                                    </span>
+                                    <i class="fas fa-info-circle tax-info" data-bs-toggle="tooltip" 
+                                       th:title="${!expense.category.taxDeductible ? 
+                                                'This expense category is not tax deductible' : 
+                                                (expense.paymentMode == 'CASH' && expense.amount > 10000 ? 
+                                                'Cash payments above ₹10,000 are not tax deductible' : '')}">
+                                    </i>
+                                </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a th:href="@{/expenses/{id}/edit(id=${expense.id})}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                th:onclick="'editExpense(' + ${expense.id} + ')'"
+                                                title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
                                         <button class="btn btn-sm btn-outline-danger" 
-                                                th:onclick="'deleteExpense(' + ${expense.id} + ')'">
-                                            <i class="bi bi-trash"></i>
+                                                th:onclick="'deleteExpense(' + ${expense.id} + ')'"
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <td colspan="4"><strong>Total</strong></td>
+                                <td class="text-right"><strong th:text="${'₹' + #numbers.formatDecimal(totalAmount, 1, 2)}"></strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td colspan="4"><strong>Total Tax Deductible</strong></td>
+                                <td class="text-right"><strong th:text="${'₹' + #numbers.formatDecimal(taxDeductibleAmount, 1, 2)}"></strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr class="table-danger">
+                                <td colspan="4"><strong>Total Non-Deductible</strong></td>
+                                <td class="text-right"><strong th:text="${'₹' + #numbers.formatDecimal(nonDeductibleAmount, 1, 2)}"></strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </main>
@@ -106,39 +166,69 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form th:action="@{/expenses}" method="post">
+                    <form th:action="@{/expenses}" method="post" id="expenseForm" class="needs-validation" novalidate>
                         <div class="mb-3">
                             <label for="company" class="form-label">Company</label>
-                            <select class="form-select" id="company" name="companyId" required>
+                            <select class="form-select" id="companyId" name="companyId" required>
                                 <option value="">Select Company</option>
                                 <option th:each="company : ${companies}" 
                                         th:value="${company.id}" 
-                                        th:text="${company.name}">Company Name</option>
+                                        th:text="${company.name}"></option>
                             </select>
+                            <div class="invalid-feedback">
+                                Please select a company.
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="category" class="form-label">Category</label>
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">Select Category</option>
-                                <option value="UTILITIES">Utilities</option>
-                                <option value="RENT">Rent</option>
-                                <option value="SALARY">Salary</option>
-                                <option value="SUPPLIES">Supplies</option>
-                                <option value="MAINTENANCE">Maintenance</option>
-                                <option value="OTHER">Other</option>
+                                <option th:each="category : ${expenseCategories}"
+                                        th:value="${category}"
+                                        th:text="${category.displayName}"
+                                        th:data-deductible="${category.taxDeductible}"></option>
                             </select>
+                            <div class="invalid-feedback">
+                                Please select an expense category.
+                            </div>
+                            <small class="form-text text-muted category-info"></small>
                         </div>
                         <div class="mb-3">
                             <label for="amount" class="form-label">Amount</label>
-                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" min="0" class="form-control" id="amount" name="amount" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid amount greater than 0.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paymentMode" class="form-label">Payment Mode</label>
+                            <select class="form-select" id="paymentMode" name="paymentMode" required>
+                                <option value="">Select Payment Mode</option>
+                                <option th:each="mode : ${paymentModes}"
+                                        th:value="${mode}"
+                                        th:text="${mode}"></option>
+                            </select>
+                            <small class="form-text text-muted payment-info"></small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paymentReference" class="form-label">Payment Reference</label>
+                            <input type="text" class="form-control" id="paymentReference" name="paymentReference" placeholder="Enter payment reference (optional)">
+                            <small class="form-text text-muted">Reference number for the payment (e.g., cheque number, transaction ID)</small>
                         </div>
                         <div class="mb-3">
                             <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="date" name="date" required>
+                            <input type="date" class="form-control" id="date" name="date" th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" required>
                         </div>
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="alert alert-info tax-status-info" style="display: none;">
+                            <i class="fas fa-info-circle"></i> 
+                            <span class="tax-status-message"></span>
                         </div>
                         <div class="text-end">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -152,11 +242,94 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Initialize tooltips and form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Form validation
+            const form = document.getElementById('expenseForm');
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+
+            // Handle expense form changes
+            const categorySelect = document.getElementById('category');
+            const amountInput = document.getElementById('amount');
+            const paymentModeSelect = document.getElementById('paymentMode');
+            const taxStatusInfo = document.querySelector('.tax-status-info');
+            const taxStatusMessage = document.querySelector('.tax-status-message');
+
+            function updateTaxStatus() {
+                const category = categorySelect.options[categorySelect.selectedIndex];
+                const amount = parseFloat(amountInput.value) || 0;
+                const paymentMode = paymentModeSelect.value;
+
+                if (category && category.value && amount > 0) {
+                    const isDeductible = category.dataset.deductible === 'true' &&
+                                       !(paymentMode === 'CASH' && amount > 10000);
+                    
+                    taxStatusInfo.style.display = 'block';
+                    if (isDeductible) {
+                        taxStatusInfo.className = 'alert alert-success tax-status-info';
+                        taxStatusMessage.innerHTML = 'This expense will be tax deductible';
+                    } else {
+                        taxStatusInfo.className = 'alert alert-warning tax-status-info';
+                        let reason = category.dataset.deductible === 'false' 
+                            ? 'This expense category is not tax deductible'
+                            : 'Cash payments above ₹10,000 are not tax deductible';
+                        taxStatusMessage.innerHTML = reason;
+                    }
+                } else {
+                    taxStatusInfo.style.display = 'none';
+                }
+            }
+
+            categorySelect.addEventListener('change', updateTaxStatus);
+            amountInput.addEventListener('input', updateTaxStatus);
+            paymentModeSelect.addEventListener('change', updateTaxStatus);
+
+            // Reset form validation when modal is hidden
+            const modal = document.getElementById('addExpenseModal');
+            modal.addEventListener('hidden.bs.modal', function() {
+                form.classList.remove('was-validated');
+                form.reset();
+                taxStatusInfo.style.display = 'none';
+            });
+        });
+
         function deleteExpense(id) {
             if (confirm('Are you sure you want to delete this expense?')) {
-                fetch(`/expenses/${id}`, { method: 'DELETE' })
-                    .then(() => window.location.reload());
+                fetch(`/expenses/${id}`, { 
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Error deleting expense');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting expense');
+                });
             }
+        }
+
+        function editExpense(id) {
+            // Implement edit functionality
+            alert('Edit functionality will be implemented soon');
         }
     </script>
 </body>
